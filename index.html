@@ -40,32 +40,43 @@
     const debug = document.getElementById('debug');
     const bookEl = document.getElementById('book');
 
-    // Wait for everything to load
     window.addEventListener('load', () => {
       if (!window.St || !St.PageFlip) {
         debug.textContent = '❌ Script not loaded';
         return;
       }
 
-      debug.textContent = '✅ Script loaded, creating book...';
+      // Get first image dimensions to determine orientation
+      const firstImg = new Image();
+      firstImg.onload = () => {
+        const isLandscape = firstImg.naturalWidth > firstImg.naturalHeight;
+        const bookWidth = isLandscape ? 600 : 400;
+        const bookHeight = isLandscape ? 400 : 600;
+        
+        debug.textContent = `📱 Image: ${isLandscape ? 'Landscape' : 'Portrait'} (${firstImg.naturalWidth}x${firstImg.naturalHeight})`;
 
-      const pageFlip = new St.PageFlip(bookEl, {
-        // Simple phone-friendly settings
-        width: 350,           // Fixed width works better on mobile
-        height: 500,          // Taller portrait ratio
-        size: "stretch",
-        showCover: true,
-        mobileScrollSupport: false
-        // Removed problematic options
-      });
+        const pageFlip = new St.PageFlip(bookEl, {
+          width: bookWidth,
+          height: bookHeight,
+          size: "stretch",
+          showCover: true,
+          mobileScrollSupport: false,
+          usePortrait: !isLandscape  // Match image orientation
+        });
 
-      const pages = Array.from({ length: 36 }, (_, i) => `assets/${i + 1}.JPG`);
+        const pages = Array.from({ length: 36 }, (_, i) => `assets/${i + 1}.JPG`);
+        pageFlip.loadFromImages(pages).then(() => {
+          debug.textContent = `✅ ${pages.length} pages (${isLandscape ? 'Landscape' : 'Portrait'})`;
+        }).catch(err => {
+          debug.textContent = `❌ ${err.message}`;
+        });
+      };
       
-      pageFlip.loadFromImages(pages).then(() => {
-        debug.textContent = `✅ Loaded ${pages.length} pages`;
-      }).catch(err => {
-        debug.textContent = `❌ Load error: ${err.message}`;
-      });
+      firstImg.onerror = () => {
+        debug.textContent = '❌ First image failed to load';
+      };
+      
+      firstImg.src = 'assets/1.JPG';
     });
   </script>
 </body>
