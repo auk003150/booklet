@@ -7,20 +7,27 @@
   <style>
     body {
       margin: 0;
-      display: grid;
-      place-items: center;
+      padding: 0;
       height: 100vh;
+      width: 100vw;
+      overflow: hidden;
       background: #f4f4f4;
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     }
     #book {
-      width: min(92vw, 900px);
-      height: min(92vh, 650px);
+      /* Full viewport minus small padding */
+      width: calc(100vw - 40px);
+      height: calc(100vh - 40px);
+      max-width: 100vw;
+      max-height: 100vh;
     }
     #error {
       color: #c00;
       font-size: 14px;
       margin-top: 10px;
+      position: absolute;
+      bottom: 10px;
+      left: 10px;
     }
   </style>
 </head>
@@ -28,7 +35,6 @@
   <div id="book"></div>
   <div id="error"></div>
 
-  <!-- Flipbook library from CDN -->
   <script src="https://cdn.jsdelivr.net/npm/page-flip/dist/js/page-flip.browser.min.js"></script>
   <script>
     if (!window.St || !St.PageFlip) {
@@ -38,18 +44,34 @@
       const bookEl = document.getElementById('book');
 
       const pageFlip = new St.PageFlip(bookEl, {
-        width: 450,
-        height: 650,
-        size: "stretch",
+        // Let it auto-scale to fill container
+        width: window.innerWidth * 0.45,  // ~half viewport width for open book
+        height: window.innerHeight * 0.9, // ~90% viewport height
+        size: "stretch",                  // Stretch to fill container
         showCover: true,
         maxShadowOpacity: 0.5,
-        mobileScrollSupport: true
+        mobileScrollSupport: true,
+        usePortrait: false                // Always landscape book orientation
       });
 
-      // assets/1.JPG to assets/36.JPG
+      // Your 36 pages
       const pages = Array.from({ length: 36 }, (_, i) => `assets/${i + 1}.JPG`);
-
       pageFlip.loadFromImages(pages);
+
+      // Re-scale on window resize
+      window.addEventListener('resize', () => {
+        pageFlip.destroy();
+        const newFlip = new St.PageFlip(bookEl, {
+          width: window.innerWidth * 0.45,
+          height: window.innerHeight * 0.9,
+          size: "stretch",
+          showCover: true,
+          maxShadowOpacity: 0.5,
+          mobileScrollSupport: true,
+          usePortrait: false
+        });
+        newFlip.loadFromImages(pages);
+      });
     }
   </script>
 </body>
