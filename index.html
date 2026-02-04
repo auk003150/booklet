@@ -1,0 +1,31 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    body { margin: 0; display: grid; place-items: center; height: 100vh; background:#f4f4f4; }
+    #book { width: min(92vw, 900px); height: min(92vh, 650px); }
+  </style>
+</head>
+<body>
+  <div id="book"></div>
+
+  <!-- Download page-flip.browser.js from the project and commit it to your repo -->
+  <script src="js/page-flip.browser.js"></script>
+  <script>
+    const pageFlip = new St.PageFlip(document.getElementById('book'), {
+      width: 450,
+      height: 650,
+      size: "stretch",
+      showCover: true
+    });
+
+    const pages = Array.from({length: 30}, (_, i) =>
+      `assets/pages/${String(i+1).padStart(3,'0')}.jpg`
+    );
+
+    pageFlip.loadFromImages(pages);
+  </script>
+</body>
+</html>
