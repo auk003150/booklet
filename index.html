@@ -1,83 +1,478 @@
-<!doctype html>
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Flipbook</title>
   <style>
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      padding: 0;
-      height: 100vh;
-      width: 100vw;
+    :root{
+      --bg: #0f1115;
+      --panel: #151922;
+      --ink: #e7ebf3;
+      --muted: #9aa3b2;
+      --accent: #5aa9ff;
+      --accent-2: #7c4dff;
+      --shadow: rgba(0,0,0,0.35);
+      --radius: 14px;
+      --gap: 16px;
+      --tap: 44px; /* min touch size */
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      background: radial-gradient(1200px 700px at 70% -20%, #1b2030 0%, #0f1115 60%) no-repeat, var(--bg);
+      color: var(--ink);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding: 16px;
+    }
+
+    .shell{
+      width: min(100%, 1100px);
+      display:flex;
+      flex-direction:column;
+      gap: var(--gap);
+    }
+
+    .toolbar{
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 10px;
+      background: linear-gradient(180deg, #181d28, #141824);
+      border: 1px solid #22283a;
+      padding: 10px 12px;
+      border-radius: var(--radius);
+      box-shadow: 0 10px 30px var(--shadow);
+      backdrop-filter: saturate(1.1);
+    }
+
+    .toolbar .group{
+      display:flex;
+      align-items:center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    button.icon{
+      appearance:none;
+      border:1px solid #2a3146;
+      background: #1a2030;
+      color: var(--ink);
+      border-radius: 10px;
+      padding: 10px 14px;
+      min-height: var(--tap);
+      min-width: var(--tap);
+      cursor:pointer;
+      transition: transform .08s ease, background .2s ease, border-color .2s;
+      font-size: 14px;
+      line-height: 1;
+      touch-action: manipulation;
+    }
+    button.icon:hover{ background:#20273a; border-color:#2f3750 }
+    button.icon:active{ transform: scale(0.98) }
+    button.icon[disabled]{ opacity:.5; cursor:not-allowed }
+
+    .label{
+      color: var(--muted);
+      font-size: 14px;
+    }
+    .page-indicator{
+      font-variant-numeric: tabular-nums;
+      font-weight:600;
+    }
+
+    .range{
+      -webkit-appearance:none;
+      appearance:none;
+      width: 260px;
+      max-width: 45vw;
+      height: 8px;
+      background: #242b3f;
+      border-radius: 999px;
+      outline:none;
+    }
+    .range::-webkit-slider-thumb{
+      -webkit-appearance:none;
+      appearance:none;
+      width:20px; height:20px;
+      background: linear-gradient(45deg, var(--accent), var(--accent-2));
+      border-radius:50%;
+      border: 2px solid #0e1320;
+      box-shadow: 0 2px 10px rgba(90,169,255,.45);
+      cursor:pointer;
+    }
+    .range::-moz-range-thumb{
+      width:20px; height:20px;
+      background: linear-gradient(45deg, var(--accent), var(--accent-2));
+      border-radius:50%;
+      border: 2px solid #0e1320;
+      box-shadow: 0 2px 10px rgba(90,169,255,.45);
+      cursor:pointer;
+    }
+
+    .stage{
+      position: relative;
+      width: 100%;
+      aspect-ratio: 3 / 2;
+      perspective: 2000px;
+      border-radius: var(--radius);
+      background:
+        radial-gradient(200% 100% at 50% 0%, rgba(255,255,255,0.06), rgba(255,255,255,0) 40%),
+        linear-gradient(180deg, #0e1320, #0b0e17 70%);
+      border: 1px solid #1f2740;
+      box-shadow: 0 30px 60px var(--shadow), inset 0 0 0 1px rgba(255,255,255,0.03);
       overflow: hidden;
-      background: #222;
+      user-select:none;
+      -webkit-user-select:none;
+      touch-action: pan-y; /* allow vertical scroll and pinch zoom */
     }
-    #book {
-      width: 100vw;
-      height: 100vh;
-      display: block;
+
+    .book{
+      position:absolute; inset: 12px;
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: 1fr;
+      gap: 0;
+      transform-style: preserve-3d;
     }
-    #debug {
-      position: fixed;
-      top: 10px;
-      left: 10px;
-      color: white;
-      font-size: 12px;
-      z-index: 100;
-      background: rgba(0,0,0,0.7);
-      padding: 5px;
+
+    .page{
+      position: relative;
+      background: #101522;
+      border: 1px solid #1e2640;
+      overflow: hidden;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.02);
+      border-radius: 6px;
+    }
+
+    .spread{
+      position:absolute; inset: 0;
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: 1fr;
+      transform-style: preserve-3d;
+      pointer-events: none;
+    }
+
+    .leaf-left{
+      grid-column: 1;
+      z-index: 1;
+    }
+
+    .leaf-right{
+      grid-column: 2;
+      transform-origin: left center;
+      transform: rotateY(0deg);
+      transition: transform 700ms cubic-bezier(.2,.7,.1,1);
+      z-index: 2;
+      box-shadow:
+        6px 0 16px rgba(0,0,0,.35),
+        inset 12px 0 30px rgba(0,0,0,.25);
+      pointer-events: auto;
+      cursor: pointer;
+    }
+
+    .leaf-right.flipping{
+      transform: rotateY(-180deg);
+      box-shadow:
+        -12px 0 30px rgba(0,0,0,.4),
+        inset -14px 0 30px rgba(0,0,0,.35);
+    }
+
+    .side{
+      position:absolute; inset:0;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      overflow:hidden;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background:#0f1422;
+    }
+    .side img{
+      width:100%; height:100%;
+      object-fit: contain;
+      display:block;
+      -webkit-user-drag: none;
+      user-drag: none;
+      touch-action: manipulation;
+    }
+    .back{ transform: rotateY(180deg); filter: brightness(.98); }
+
+    .leaf-right::before{
+      content:"";
+      position:absolute; top:0; bottom:0; left:-1px; width:2px;
+      background: linear-gradient(180deg, rgba(255,255,255,.25), rgba(255,255,255,0));
+      opacity:.4;
+      pointer-events:none;
+    }
+
+    .tips{
+      color: var(--muted);
+      font-size: 13px;
+      text-align:center;
+      opacity:.9;
+    }
+
+    /* Mobile refinements */
+    @media (max-width: 768px){
+      body{ padding: 12px; }
+      .range{ max-width: 55vw; }
+      .stage{ aspect-ratio: 3 / 4; } /* taller on phones */
+      .toolbar{ gap: 6px; padding: 8px 10px; }
+      button.icon{ font-size: 15px; padding: 12px 14px; }
+      .label, .page-indicator{ font-size: 15px; }
+    }
+
+    @media (max-width: 420px){
+      .toolbar{ flex-wrap: wrap; }
+      .group:last-child{ flex: 1 1 100%; justify-content: center; }
+      .range{ width: 100%; max-width: none; }
     }
   </style>
 </head>
 <body>
-  <div id="book"></div>
-  <div id="debug">Loading...</div>
+  <div class="shell">
+    <div class="toolbar">
+      <div class="group">
+        <button class="icon" id="prevBtn" aria-label="Previous Page">⟵ Prev</button>
+        <button class="icon" id="nextBtn" aria-label="Next Page">Next ⟶</button>
+        <button class="icon" id="fsBtn" aria-label="Toggle Fullscreen">⛶ Fullscreen</button>
+      </div>
+      <div class="group">
+        <span class="label">Page</span>
+        <span class="page-indicator" id="pageLabel">1 / 36</span>
+      </div>
+      <div class="group">
+        <input type="range" min="1" max="36" value="1" class="range" id="pageRange" />
+      </div>
+    </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/page-flip/dist/js/page-flip.browser.min.js"></script>
+    <div class="stage" id="stage" aria-label="Flipbook">
+      <div class="book" id="book">
+        <div class="spread" id="spread">
+          <div class="page leaf-left">
+            <div class="side front">
+              <img id="leftImg" alt="Left page" loading="lazy" decoding="async">
+            </div>
+          </div>
+          <div class="page leaf-right" id="flippable">
+            <div class="side front">
+              <img id="rightImgFront" alt="Right page" loading="lazy" decoding="async">
+            </div>
+            <div class="side back">
+              <img id="rightImgBack" alt="Back page" loading="lazy" decoding="async">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tips">
+      Tips: Tap the right page to flip. Swipe left/right. Use the slider or buttons. Pinch to zoom using your browser. Double-tap to quickly zoom in/out on mobile.
+    </div>
+  </div>
+
   <script>
-    const debug = document.getElementById('debug');
-    const bookEl = document.getElementById('book');
+    const TOTAL_PAGES = 36; // 1.JPG .. 36.JPG
+    const IMG_PATH = n => `${n}.JPG`;
 
-    window.addEventListener('load', () => {
-      if (!window.St || !St.PageFlip) {
-        debug.textContent = '❌ Script not loaded';
+    // State: odd page on the left, right shows next page
+    let rightBase = 1;
+    const stage = document.getElementById('stage');
+    const flippable = document.getElementById('flippable');
+    const leftImg = document.getElementById('leftImg');
+    const rightImgFront = document.getElementById('rightImgFront');
+    const rightImgBack = document.getElementById('rightImgBack');
+    const pageLabel = document.getElementById('pageLabel');
+    const pageRange = document.getElementById('pageRange');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const fsBtn = document.getElementById('fsBtn');
+
+    function clamp(val, min, max){ return Math.max(min, Math.min(max, val)); }
+    function nearestOdd(n){ return n % 2 === 1 ? n : n - 1; }
+
+    function setAriaBusy(busy){
+      stage.setAttribute('aria-busy', busy ? 'true' : 'false');
+    }
+
+    function updateControls(){
+      const currentPage = clamp(rightBase, 1, TOTAL_PAGES);
+      pageLabel.textContent = `${currentPage} / ${TOTAL_PAGES}`;
+      pageRange.value = String(currentPage);
+      prevBtn.disabled = currentPage <= 1;
+      nextBtn.disabled = currentPage >= TOTAL_PAGES - 1;
+    }
+
+    function loadImage(el, index){
+      if(index < 1 || index > TOTAL_PAGES){
+        el.src = '';
+        el.alt = 'Empty';
+        el.style.opacity = 0;
         return;
       }
+      el.src = IMG_PATH(index);
+      el.alt = `Page ${index}`;
+      el.style.opacity = 1;
+    }
 
-      // Get first image dimensions to determine orientation
-      const firstImg = new Image();
-      firstImg.onload = () => {
-        const isLandscape = firstImg.naturalWidth > firstImg.naturalHeight;
-        const bookWidth = isLandscape ? 600 : 400;
-        const bookHeight = isLandscape ? 400 : 600;
-        
-        debug.textContent = `📱 Image: ${isLandscape ? 'Landscape' : 'Portrait'} (${firstImg.naturalWidth}x${firstImg.naturalHeight})`;
+    function render(){
+      const L = rightBase;
+      const R = rightBase + 1;
+      const B = rightBase + 2;
+      loadImage(leftImg, L);
+      loadImage(rightImgFront, R);
+      loadImage(rightImgBack, B);
+      updateControls();
+      // Hint browser to prioritize current images
+      [leftImg, rightImgFront, rightImgBack].forEach(img => {
+        if('loading' in img) img.loading = 'eager';
+      });
+      // Preload next two pages for smoother mobile experience
+      [B + 1, B + 2].forEach(n => {
+        if(n >= 1 && n <= TOTAL_PAGES){
+          const im = new Image();
+          im.decoding = 'async';
+          im.src = IMG_PATH(n);
+        }
+      });
+    }
 
-        const pageFlip = new St.PageFlip(bookEl, {
-          width: bookWidth,
-          height: bookHeight,
-          size: "stretch",
-          showCover: true,
-          mobileScrollSupport: false,
-          usePortrait: !isLandscape  // Match image orientation
-        });
-
-        const pages = Array.from({ length: 36 }, (_, i) => `assets/${i + 1}.JPG`);
-        pageFlip.loadFromImages(pages).then(() => {
-          debug.textContent = `✅ ${pages.length} pages (${isLandscape ? 'Landscape' : 'Portrait'})`;
-        }).catch(err => {
-          debug.textContent = `❌ ${err.message}`;
-        });
+    let animating = false;
+    function flipForward(){
+      if(animating) return;
+      if(rightBase >= TOTAL_PAGES - 1) return;
+      animating = true;
+      setAriaBusy(true);
+      flippable.classList.add('flipping');
+      const onEnd = () => {
+        flippable.removeEventListener('transitionend', onEnd);
+        rightBase = clamp(rightBase + 2, 1, TOTAL_PAGES - 1);
+        flippable.classList.remove('flipping');
+        render();
+        setAriaBusy(false);
+        animating = false;
       };
-      
-      firstImg.onerror = () => {
-        debug.textContent = '❌ First image failed to load';
-      };
-      
-      firstImg.src = 'assets/1.JPG';
+      flippable.addEventListener('transitionend', onEnd);
+    }
+
+    function flipBackward(){
+      if(animating) return;
+      if(rightBase <= 1) return;
+      animating = true;
+      setAriaBusy(true);
+      rightBase = clamp(rightBase - 2, 1, TOTAL_PAGES - 1);
+      flippable.classList.add('flipping');
+      render();
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          flippable.classList.remove('flipping');
+          const onEnd = () => {
+            flippable.removeEventListener('transitionend', onEnd);
+            setAriaBusy(false);
+            animating = false;
+          };
+          flippable.addEventListener('transitionend', onEnd);
+        });
+      });
+    }
+
+    function jumpTo(page){
+      const odd = clamp(nearestOdd(page), 1, TOTAL_PAGES - 1);
+      rightBase = odd;
+      render();
+    }
+
+    nextBtn.addEventListener('click', flipForward);
+    prevBtn.addEventListener('click', flipBackward);
+    pageRange.addEventListener('input', (e) => {
+      const target = Number(e.target.value || 1);
+      jumpTo(target);
     });
+
+    // Click/tap right page
+    flippable.addEventListener('click', flipForward);
+
+    // Keyboard
+    window.addEventListener('keydown', (e) => {
+      if(e.key === 'ArrowRight') flipForward();
+      if(e.key === 'ArrowLeft') flipBackward();
+    });
+
+    // Touch gestures: swipe
+    let touchStartX = null, touchStartY = null, touchTime = 0;
+    stage.addEventListener('touchstart', (e) => {
+      const t = e.changedTouches[0];
+      touchStartX = t.clientX;
+      touchStartY = t.clientY;
+      touchTime = Date.now();
+    }, {passive:true});
+    stage.addEventListener('touchend', (e) => {
+      if(touchStartX == null) return;
+      const t = e.changedTouches[0];
+      const dx = t.clientX - touchStartX;
+      const dy = t.clientY - touchStartY;
+      const dt = Date.now() - touchTime;
+      const fast = dt < 450;
+      const horizontal = Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 40;
+      if(horizontal && fast){
+        if(dx < 0) flipForward();
+        else flipBackward();
+      }
+      touchStartX = touchStartY = null;
+    }, {passive:true});
+
+    // Handle missing images gracefully
+    [leftImg, rightImgFront, rightImgBack].forEach(img => {
+      img.addEventListener('error', () => {
+        img.style.opacity = 0.35;
+      });
+    });
+
+    // Deep link: #p=12
+    function readHash(){
+      const m = location.hash.match(/p=(\d+)/);
+      if(m){
+        const p = parseInt(m[1], 10);
+        if(Number.isFinite(p)) jumpTo(p);
+      }
+    }
+    window.addEventListener('hashchange', readHash);
+    readHash();
+
+    // Fullscreen
+    function toggleFullscreen(){
+      const el = document.documentElement;
+      if(!document.fullscreenElement){
+        (el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen)?.call(el);
+      } else {
+        (document.exitFullscreen || document.webkitExitFullscreen || document.msExitFullscreen)?.call(document);
+      }
+    }
+    fsBtn.addEventListener('click', toggleFullscreen);
+
+    // Double-tap to zoom hint (uses browser default zoom)
+    let lastTap = 0;
+    stage.addEventListener('touchend', (e) => {
+      const now = Date.now();
+      if(now - lastTap < 300){
+        // Let the browser handle double-tap zoom; do not preventDefault
+      }
+      lastTap = now;
+    }, {passive:true});
+
+    // Initial render and warmup
+    function warmup(){ [1,2,3,4].forEach(n => { const im = new Image(); im.src = IMG_PATH(n); }); }
+    warmup();
+    render();
   </script>
 </body>
 </html>
