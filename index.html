@@ -24,7 +24,7 @@
     // SCAN0000.jpg to SCAN0016.jpg  -> 17 pages total
     const pages = Array.from({ length: 36 }, (_, i) => {
       const n = String(i+1)
-      return `assets/SCAN${n}.jpg`;
+      return `assets/SCAN${n}.JPG`;
     });
 
     pageFlip.loadFromImages(pages);
