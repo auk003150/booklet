@@ -11,6 +11,7 @@
 <body>
   <div id="book"></div>
 
+  <!-- Use CDN build of page-flip -->
   <script src="https://cdn.jsdelivr.net/npm/page-flip/dist/js/page-flip.browser.min.js"></script>
   <script>
     const pageFlip = new St.PageFlip(document.getElementById('book'), {
@@ -20,9 +21,10 @@
       showCover: true
     });
 
-    const pages = Array.from({ length: 30 }, (_, i) => {
-      const n = String(i + 1).padStart(3, '0'); // adjust to your naming
-      return `assets/SCAN${n}.jpg`;            // or match your real file names
+    // SCAN0000.jpg to SCAN0016.jpg  -> 17 pages total
+    const pages = Array.from({ length: 17 }, (_, i) => {
+      const n = String(i).padStart(4, '0'); // 0 -> "0000", 16 -> "0016"
+      return `assets/SCAN${n}.jpg`;
     });
 
     pageFlip.loadFromImages(pages);
