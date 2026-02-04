@@ -3,31 +3,54 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Flipbook</title>
   <style>
-    body { margin: 0; display: grid; place-items: center; height: 100vh; background:#f4f4f4; }
-    #book { width: min(92vw, 900px); height: min(92vh, 650px); }
+    body {
+      margin: 0;
+      display: grid;
+      place-items: center;
+      height: 100vh;
+      background: #f4f4f4;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    #book {
+      width: min(92vw, 900px);
+      height: min(92vh, 650px);
+    }
+    #error {
+      color: #c00;
+      font-size: 14px;
+      margin-top: 10px;
+    }
   </style>
 </head>
 <body>
   <div id="book"></div>
+  <div id="error"></div>
 
-  <!-- Use CDN build of page-flip -->
+  <!-- Flipbook library from CDN -->
   <script src="https://cdn.jsdelivr.net/npm/page-flip/dist/js/page-flip.browser.min.js"></script>
   <script>
-    const pageFlip = new St.PageFlip(document.getElementById('book'), {
-      width: 450,
-      height: 650,
-      size: "stretch",
-      showCover: true
-    });
+    if (!window.St || !St.PageFlip) {
+      document.getElementById('error').textContent =
+        'Flipbook script did not load. Check your network or script URL.';
+    } else {
+      const bookEl = document.getElementById('book');
 
-    // SCAN0000.jpg to SCAN0016.jpg  -> 17 pages total
-    const pages = Array.from({ length: 36 }, (_, i) => {
-      const n = String(i+1)
-      return `assets/SCAN${n}.JPG`;
-    });
+      const pageFlip = new St.PageFlip(bookEl, {
+        width: 450,
+        height: 650,
+        size: "stretch",
+        showCover: true,
+        maxShadowOpacity: 0.5,
+        mobileScrollSupport: true
+      });
 
-    pageFlip.loadFromImages(pages);
+      // assets/1.JPG to assets/36.JPG
+      const pages = Array.from({ length: 36 }, (_, i) => `assets/${i + 1}.JPG`);
+
+      pageFlip.loadFromImages(pages);
+    }
   </script>
 </body>
 </html>
