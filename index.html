@@ -2,84 +2,71 @@
 <html>
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
   <title>Flipbook</title>
   <style>
+    * { box-sizing: border-box; }
     body {
       margin: 0;
       padding: 0;
       height: 100vh;
       width: 100vw;
       overflow: hidden;
-      background: #f4f4f4;
+      background: #222;
     }
     #book {
-      /* Full screen minus tiny padding */
-      width: calc(100vw - 20px);
-      height: calc(100vh - 20px);
-      margin: auto;
+      width: 100vw;
+      height: 100vh;
+      display: block;
     }
-    #error {
-      color: #c00;
-      font-size: 12px;
+    #debug {
       position: fixed;
-      bottom: 10px;
+      top: 10px;
       left: 10px;
+      color: white;
+      font-size: 12px;
       z-index: 100;
+      background: rgba(0,0,0,0.7);
+      padding: 5px;
     }
   </style>
 </head>
 <body>
   <div id="book"></div>
-  <div id="error"></div>
+  <div id="debug">Loading...</div>
 
   <script src="https://cdn.jsdelivr.net/npm/page-flip/dist/js/page-flip.browser.min.js"></script>
   <script>
-    if (!window.St || !St.PageFlip) {
-      document.getElementById('error').textContent = 'Flipbook script failed to load.';
-    } else {
-      const bookEl = document.getElementById('book');
-      
-      // Detect mobile and set single-page portrait mode
-      const isMobile = window.innerWidth < 768;
-      const bookWidth = isMobile ? 320 : window.innerWidth * 0.45;
-      const bookHeight = isMobile ? window.innerHeight * 0.85 : window.innerHeight * 0.9;
+    const debug = document.getElementById('debug');
+    const bookEl = document.getElementById('book');
 
-      let pageFlip;
-
-      function initBook() {
-        if (pageFlip) pageFlip.destroy();
-        
-        pageFlip = new St.PageFlip(bookEl, {
-          width: bookWidth,
-          height: bookHeight,
-          size: "stretch",
-          showCover: true,
-          maxShadowOpacity: 0.3,
-          mobileScrollSupport: false,  // Prevent page scroll on phones
-          swipeDistance: 20,           // Easier swipes on touch
-          usePortrait: isMobile,       // Single page on mobile
-          minWidth: 305,               // Minimum single page width
-          maxWidth: 990,               // Maximum double page width
-          minHeight: 420,
-          maxHeight: 1350,
-          drawShadow: true
-        });
-
-        const pages = Array.from({ length: 36 }, (_, i) => `assets/${i + 1}.JPG`);
-        pageFlip.loadFromImages(pages);
+    // Wait for everything to load
+    window.addEventListener('load', () => {
+      if (!window.St || !St.PageFlip) {
+        debug.textContent = '❌ Script not loaded';
+        return;
       }
 
-      // Initial load
-      initBook();
+      debug.textContent = '✅ Script loaded, creating book...';
 
-      // Re-init on resize (phone rotate, etc.)
-      let resizeTimeout;
-      window.addEventListener('resize', () => {
-        clearTimeout(resizeTimeout);
-        resizeTimeout = setTimeout(initBook, 250);
+      const pageFlip = new St.PageFlip(bookEl, {
+        // Simple phone-friendly settings
+        width: 350,           // Fixed width works better on mobile
+        height: 500,          // Taller portrait ratio
+        size: "stretch",
+        showCover: true,
+        mobileScrollSupport: false
+        // Removed problematic options
       });
-    }
+
+      const pages = Array.from({ length: 36 }, (_, i) => `assets/${i + 1}.JPG`);
+      
+      pageFlip.loadFromImages(pages).then(() => {
+        debug.textContent = `✅ Loaded ${pages.length} pages`;
+      }).catch(err => {
+        debug.textContent = `❌ Load error: ${err.message}`;
+      });
+    });
   </script>
 </body>
 </html>
