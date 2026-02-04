@@ -22,9 +22,9 @@
     });
 
     // SCAN0000.jpg to SCAN0016.jpg  -> 17 pages total
-    const pages = Array.from({ length: 17 }, (_, i) => {
-      const n = String(i).padStart(4, '0'); // 0 -> "0000", 16 -> "0016"
-      return `assets/SCAN${n}.JPG`;
+    const pages = Array.from({ length: 36 }, (_, i) => {
+      const n = String(i+1)
+      return `assets/SCAN${n}.jpg`;
     });
 
     pageFlip.loadFromImages(pages);
