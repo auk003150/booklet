@@ -22,8 +22,8 @@
     });
 
     // If your files are SCAN0001.jpg ... SCAN0030.jpg
-    const pages = Array.from({ length: 30 }, (_, i) => {
-      const n = String(i + 1).padStart(3, '0'); // 1 -> "001"
+    const pages = Array.from({ length: 17 }, (_, i) => {
+      const n = String(i).padStart(3, '0'); // 1 -> "001"
       return `assets/SCAN${n}.jpg`;
     });
 
